@@ -1,20 +1,50 @@
-# :airplane_small: EnjoyTrip
+# 🐥 TripBuddy
 
-![img](resources/readme-img/sample.gif)
+![img](resources/readme-img/main1.gif)
 
 **여행 계획(플랜)을 생성하고, 친구들과 공유해 함께 편집할 수 있는 웹 서비스**
 
+| 초기 화면                              | 메인 화면                              | 실시간 통신 화면                       |
+| -------------------------------------- | -------------------------------------- | -------------------------------------- |
+| ![img](resources/readme-img/main1.gif) | ![img](resources/readme-img/main3.gif) | ![img](resources/readme-img/main2.gif) |
+
 ---
 
-# :computer: 팀원 소개
+## 시연 영상
 
-- 최용혁
-  - **API 작성** - Attraction, Memo, Notice, Notify
-  - **Swagger**를 이용한 API 문서화 작업 - Request, Response 설정 및 Test Value 설정
-- 황서영
-  - Springboot 초기 세팅 및 Controller, Service, Mapper, DTO 클래스 설계
-  - **API 작성** - Plan, Review, Users, Follow, Wish, Comment, Notify
-  - **Interceptor**를 통한 Session 및 각 API에 대한 **권한 인증 처리**
+[![Video Label](http://img.youtube.com/vi/eVXOb6TZwgk/0.jpg)](https://youtu.be/eVXOb6TZwgk)
+
+- 타임라인 (클릭시 유튜브로 이동)
+  - [회원가입 및 로그인](https://youtu.be/eVXOb6TZwgk?t=12)
+  - [메인화면](https://youtu.be/eVXOb6TZwgk?t=28)
+  - [공지사항](https://youtu.be/eVXOb6TZwgk?t=38)
+  - [여행후기](https://youtu.be/eVXOb6TZwgk?t=55)
+  - [마이페이지](https://youtu.be/eVXOb6TZwgk?t=85)
+  - [알림기능](https://youtu.be/eVXOb6TZwgk?t=103)
+  - [플랜수정 - 관광지 검색 및 경로 추가](https://youtu.be/eVXOb6TZwgk?t=130)
+  - [플랜수정 - 관광지 찜 기능](https://youtu.be/eVXOb6TZwgk?t=166)
+  - [플랜수정 - 관광지에 메모 등록](https://youtu.be/eVXOb6TZwgk?t=200)
+  - [WebSocket 기반 실시간 통신 - 채팅](https://youtu.be/eVXOb6TZwgk?t=210)
+  - [WebSocket 기반 실시간 통신 - 코스 변경](https://youtu.be/eVXOb6TZwgk?t=236)
+  - [여행후기 작성](https://youtu.be/eVXOb6TZwgk?t=260)
+  - [개인페이지 - 트립 로그](https://youtu.be/eVXOb6TZwgk?t=273)
+
+---
+
+# :computer: 담당한 역할
+
+- Stateless
+  - SpringBoot 초기 세팅, Controller, Service, Mapper, DTO 클래스 설계
+  - Plan, Review, Users, Follow, Wish, Comment, Notify 컨트롤러에 대한 **API 및 MyBatis 쿼리 작성**
+  - **JWT Token** Service 작성
+  - **Filter**를 사용한 일부 Request Wrapping 처리
+  - **Interceptor**를 통한 API 별 인가 처리
+  - **SMTP 기반 메일 전송**을 통한 비밀번호 초기화 기능
+- Stateful
+  - WebSocket 기반 **연결 관리를 위한 NetworkService** 작성
+    - `ConcurrentHashMap`을 사용한 세션 관리, 플랜 별 Room 개념 도입
+    - Room 별 여행 경로 상태를 접속 유저와 공유하여 동기화
+  - **소켓 핸들러** 작성, **패킷 프로시져 로직** 작성
 
 ---
 
@@ -24,6 +54,7 @@
 - MyBatis
 - MySQL
 - Swagger
+- WebSocket
 - Git
 
 ---
@@ -54,6 +85,7 @@
 | 알림 컨트롤러   | /notifys  | 개별 사용자에 대한 알림 처리              |
 | 팔로우 컨트롤러 | /follows  | 팔로우 관계 처리                          |
 | 찜 컨트롤러     | /wishes   | 개별 사용자가 찜한 관광지에 대한 처리     |
+| 실시간 채팅     | /chat     | WebSocket 기반 실시간 패킷 처리           |
 
 ---
 
@@ -110,69 +142,3 @@
 | 리뷰 댓글 작성          | <img src="https://img.shields.io/badge/-POST-red">           | <img src="https://img.shields.io/badge/-Session-orange">                                                                                                                   | /comments                         |
 | 리뷰 댓글 수정          | <img src="https://img.shields.io/badge/-PUT-orange">         | <img src="https://img.shields.io/badge/-Comment-d6a689"> <img src="https://img.shields.io/badge/-Session-orange">                                                          | /comments                         |
 | 리뷰 댓글 삭제          | <img src="https://img.shields.io/badge/-DELETE-yellowgreen"> | <img src="https://img.shields.io/badge/-Comment-d6a689"> <img src="https://img.shields.io/badge/-Session-orange">                                                          | /comments/{commentid}             |
-
----
-
-# :page_facing_up: 컨트롤러 별 API 리스트
-
-Request 및 Response **상세 정보**는 <a href="http://localhost/swagger-ui/index.html"><b>Swagger API Docs</b></a>에서 확인 가능
-
-## :family: 유저 컨트롤러
-
-![img](resources/readme-img/apis/user-controller.png)
-
----
-
-## :map: 관광지 컨트롤러
-
-![img](resources/readme-img/apis/attraction-controller.png)
-
----
-
-## :airplane_small: 플랜 컨트롤러
-
-![img](resources/readme-img/apis/plan-controller.png)
-
----
-
-## :notepad_spiral: 메모 컨트롤러
-
-![img](resources/readme-img/apis/memo-controller.png)
-
----
-
-## :pencil: 리뷰 컨트롤러
-
-![img](resources/readme-img/apis/review-controller.png)
-
----
-
-## :speech_balloon: 댓글 컨트롤러
-
-![img](resources/readme-img/apis/comment-controller.png)
-
----
-
-## :mega: 공지 컨트롤러
-
-![img](resources/readme-img/apis/notice-controller.png)
-
----
-
-## :bell: 알림 컨트롤러
-
-![img](resources/readme-img/apis/notify-controller.png)
-
----
-
-## :busts_in_silhouette: 팔로우 컨트롤러
-
-![img](resources/readme-img/apis/follow-controller.png)
-
----
-
-## :pushpin: 찜 컨트롤러
-
-![img](resources/readme-img/apis/wish-controller.png)
-
----
