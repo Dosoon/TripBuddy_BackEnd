@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripbuddy.user.model.mapper.UserMapper">
+
+	<resultMap type="userDto" id="user">
+		<result column="user_id" property="userId"/>
+		<result column="id" property="id"/>
+		<result column="password" property="password"/>
+		<result column="name" property="name"/>
+		<result column="profileimg" property="profileImg"/>
+		<result column="email" property="email"/>
+		<result column="admin" property="isAdmin"/>
+		<result column="last_access" property="lastAccess"/>
+	</resultMap>
+	
+	<resultMap type="reviewDto" id="review">
+		<result column="review_id" property="reviewId"></result>
+		<result column="subject" property="subject"></result>
+		<result column="content" property="content"></result>
+		<result column="user_id" property="userId"></result>
+		<result column="user_name" property="userName"></result>
+		<result column="regist_time" property="registTime"></result>
+		<result column="plan_id" property="planId"></result>
+		<result column="rating" property="rating"></result>
+	</resultMap>
+
+	<select id="login" parameterType="userDto" resultMap="user">
+	select user_id, id, name, profileimg, email, admin, last_access
+	from users
+	where id = #{id} and password = #{password} and valid = 1
+	</select>	
+	
+	<update id="updateLastAccess" parameterType="userDto">
+	update users set last_access = now() where id = #{id}
+	</update>
+	
+	<select id="listReviewByUser" parameterType="int" resultMap="review">
+	select rv.review_id, rv.subject, rv.content, rv.user_id, rv.regist_time, rv.plan_id, u.name user_name,
+	IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+	from review rv
+	join users u on rv.user_id = u.user_id
+	left join rating rt on rv.review_id = rt.review_id
+	where rv.user_id = ${userId}
+	</select>
+
+	<insert id="signup" parameterType="userDto">
+	insert into users (id, password, name, email)
+	values (#{id}, #{password}, #{name}, #{email})
+	</insert>
+	
+	<update id="deleteUser" parameterType="int">
+	update users set valid = 0
+	where user_id = #{userId}
+	</update>
+	
+	<update id="deleteUserToken" parameterType="int">
+	update users set token = null where user_id = ${userId}
+	</update>
+	
+	<select id="getUserInfo" parameterType="String" resultMap="user">
+	select user_id, id, name, profileimg
+	from users
+	where id = #{id}
+	</select>	
+	
+	<update id="modifyUser" parameterType="userDto">
+	update users
+		<trim prefix="set" suffixOverrides=",">
+			<if test="profileImg != null">profileimg = #{profileImg},</if>
+			<if test="password != null">password = #{password},</if>
+		</trim>
+	where user_id = ${userId}
+	</update>
+	
+	<select id="checkUserByEmail" parameterType="userDto" resultType="int">
+	select case count(user_id) when 0 then -1 else user_id end
+	from users
+	where id = #{id} and email = #{email}
+	</select>
+	
+	<select id="checkId" parameterType="String" resultType="int">
+	select count(*) from users where id = #{id}
+	</select>
+	
+	<select id="checkAdmin" parameterType="map" resultType="int">
+	select count(*)
+	from users
+	where user_id = ${userId} and admin = 1
+	</select>
+	
+	<update id="saveRefreshToken" parameterType="map">
+	update users set token = #{token} where user_id = ${userId}
+	</update>
+	
+	<select id="getRefreshToken" parameterType="int" resultType="String">
+	select token from users where user_id = ${userId}
+	</select>
+
+</mapper>

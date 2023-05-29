@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripbuddy.plan.model.mapper.PlanMapper">
+
+	<parameterMap id="courses" type="list"/>
+
+	<resultMap type="planDto" id="plan">
+		<result column="plan_id" property="planId"/>
+		<result column="title" property="title"/>
+		<result column="start_date" property="startDate"/>
+		<result column="end_date" property="endDate"/>
+		<result column="last_modified" property="lastModified"/>
+	</resultMap>
+	
+	<resultMap type="planDto" id="planWithThumbnail" extends="plan">
+		<result column="thumbnail" property="thumbnail" />
+		<collection property="members" column="planId = plan_id" javaType="list" ofType="userDto" select="getMembersInfo"/>
+	</resultMap>
+	
+	<resultMap type="planDto" id="planWithCourse" extends="plan">
+		<collection property="courses" column="planId = plan_id" javaType="list" ofType="courseDto" select="getCourseInfo"/>
+	</resultMap>
+	
+	<resultMap type="courseDto" id="course">
+		<result column="content_id" property="contentId"/>
+		<result column="plan_id" property="planId"/>
+		<result column="order" property="order"/>
+		<result column="day" property="day"/>
+		<association property="attractionDto" javaType="attractionDto">
+			<result column="content_id" property="contentId" />
+			<result column="content_type_id" property="contentTypeId" />
+			<result column="title" property="title" />
+			<result column="addr1" property="addr1" />
+			<result column="addr2" property="addr2" />
+			<result column="zipcode" property="zipCode" />
+			<result column="first_image" property="firstImage" />
+			<result column="first_image2" property="firstImage2" />
+			<result column="readcount" property="readCount" />
+			<result column="sido_code" property="sidoCode" />
+			<result column="gugun_code" property="gugunCode" />
+			<result column="latitude" property="latitude" />
+			<result column="longitude" property="longitude" />
+			<result column="mlevel" property="mlevel" />
+		</association>
+	</resultMap>
+	
+	<resultMap type="attractionDto" id="attraction">
+		<result column="content_id" property="contentId" />
+		<result column="content_type_id" property="contentTypeId" />
+		<result column="title" property="title" />
+		<result column="addr1" property="addr1" />
+		<result column="addr2" property="addr2" />
+		<result column="zipcode" property="zipCode" />
+		<result column="first_image" property="firstImage" />
+		<result column="first_image2" property="firstImage2" />
+		<result column="readcount" property="readCount" />
+		<result column="sido_code" property="sidoCode" />
+		<result column="gugun_code" property="gugunCode" />
+		<result column="latitude" property="latitude" />
+		<result column="longitude" property="longitude" />
+		<result column="mlevel" property="mlevel" />
+	</resultMap>
+	
+	<resultMap type="userDto" id="user">
+		<result column="user_id" property="userId"/>
+		<result column="name" property="name"/>
+		<result column="profileimg" property="profileImg"/>
+	</resultMap>
+	
+	<select id="getCourseInfo" resultMap="course">
+	select c.content_id, c.plan_id, c.order, c.day,
+	a.content_id, a.content_type_id, a.title, a.addr1, a.addr2, a.first_image, a.sido_code, a.gugun_code, a.latitude, a.longitude
+	from course c
+	join attraction_info a on a.content_id = c.content_id
+	where c.plan_id = ${planId}
+	</select>
+	
+	<select id="getPlanInfo" parameterType="map" resultMap="planWithCourse">
+	select plan_id, title, start_date, end_date, last_modified
+	from plan
+	where plan_id = ${planId}
+	</select>
+	
+	<select id="listPlanByUser" parameterType="int" resultMap="plan">
+	select p.plan_id, p.title, p.start_date, p.end_date, p.last_modified
+	from plan_group pg
+	join plan p on p.plan_id = pg.plan_id
+	where pg.user_id = ${userId}
+	</select>
+	
+	<select id="listPlanByUserWithThumbnail" parameterType="int" resultMap="planWithThumbnail">
+	select p.plan_id, p.title, p.start_date, p.end_date, p.last_modified,
+		(select first_image
+		from attraction_info a
+		join course c on c.content_id = a.content_id
+		where p.plan_id = c.plan_id
+		order by day, `order` limit 1) thumbnail
+	from plan_group pg
+	join plan p on p.plan_id = pg.plan_id
+	where pg.user_id = ${userId}
+	order by p.last_modified desc
+	</select>
+	
+	<insert id="postPlan" parameterType="map">
+	insert into plan (title)
+	values ("새로운 여행 계획")
+		<selectKey keyProperty="planId" resultType="int" order="AFTER">
+	        select LAST_INSERT_ID()
+	    </selectKey>
+	</insert>
+	
+	<insert id="postPlanWithTitle" parameterType="map">
+	insert into plan (title)
+	select title from plan where plan_id = ${planId}
+		<selectKey keyProperty="newPlanId" resultType="int" order="AFTER">
+	        select LAST_INSERT_ID()
+	    </selectKey>
+	</insert>
+	
+	<insert id="postPlanMember" parameterType="map">
+	insert into plan_group (plan_id, user_id)
+	values (${planId}, ${userId})
+	</insert>
+	
+	<delete id="deletePlanMember" parameterType="map">
+	delete from plan_group
+	where user_id = ${userId} and plan_id = ${planId}
+	</delete>
+
+	<select id="getMembersInfo" resultMap="user">
+	select u.user_id, u.name, u.profileimg
+	from plan_group pg
+	join users u on pg.user_id = u.user_id
+	where pg.plan_id = ${planId}
+	</select>
+	
+	<insert id="scrapPlan" parameterType="map">
+	insert into course (plan_id, content_id, `order`, day)
+	select ${newPlanId}, content_id, `order`, day from course where plan_id = ${planId}
+	</insert>
+	
+	<delete id="resetPlan" parameterType="map">
+	delete from course
+	where plan_id = ${planId}
+	</delete>
+	
+	<update id="updatePlanInfo" parameterType="map">
+	update plan
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="title != null">title = #{title},</if>
+			<if test="startDate != null">start_date = #{startDate},</if>
+			<if test="endDate != null">end_date = #{endDate},</if>
+			<if test="1">last_modified = now(),</if>
+		</trim>
+	where plan_id = ${planId}
+	</update>
+	
+	<insert id="modifyPlan" parameterType="map">
+	insert into course (plan_id, content_id, `order`, day)
+	values 
+		<foreach collection="courses" item="item" separator=",">
+		(
+			#{planId},
+			#{item.contentId},
+			#{item.order},
+			#{item.day}
+		)
+		</foreach>
+	</insert>
+	
+	<select id="checkPlanMember" parameterType="map" resultType="int">
+	select count(*)
+	from plan_group
+	where plan_id = ${planId} and user_id = ${userId}
+	</select>
+	
+	
+	<select id="getPlanJoinInfo" parameterType="map" resultType="int">
+	select count(*)
+	from plan_group
+	where plan_id = ${planId} and user_id = ${userId}
+	</select>
+	
+	<select id="getPlanList" resultMap="plan">
+	select plan_id, title, start_date, end_date, last_modified
+	from plan
+	</select>
+	
+
+
+	
+
+</mapper>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.notify.model.mapper.NotifyMapper">
+
+	<resultMap type="notifyDto" id="notify">
+		<result column="notify_id" property="notifyId" />
+		<result column="user_id" property="userId" />
+		<result column="type" property="type" />
+		<result column="read" property="read" />
+		<result column="sender_id" property="senderId" />
+		<result column="target_id" property="targetId" />
+		<result column="notify_msg" property="notifyMsg" />
+	</resultMap>
+	
+	<select id="getNotifys" parameterType="map" resultMap="notify">
+	select n.notify_id, n.user_id, n.type, n.read, n.sender_id, n.target_id,
+		
+	case type when 'invite' or 'disabled' then concat(u.name, '님이 회원님을 [', p.title, '] 플랜에 초대했습니다.')
+	when 'reply' then concat(u.name, '님이 [', r.subject, '] 게시글에 댓글을 달았습니다.') end notify_msg
+		
+	from notify n
+	join users u on n.sender_id = u.user_id
+	left join plan p on n.target_id = p.plan_id
+	left join review r on n.target_id = r.review_id
+	where n.user_id = ${userId}
+	order by notify_id desc limit 10 offset ${offset}
+	</select>
+	
+	<select id="getNotreadNotifys" parameterType="map" resultType="int">
+	select count(*) notread from notify where user_id = ${userId} and `read` = 0
+	</select>
+
+	<update id="updateRead" parameterType="map">
+	update notify set `read` = 1
+	where user_id = ${userId}
+	order by notify_id desc limit ${curLoadCount}
+	</update>
+	
+	<select id="getRecentNotifys" parameterType="map" resultMap="notify">
+	select n.notify_id, n.user_id, n.type, n.read, n.sender_id, n.target_id,
+		
+	case type when 'invite' or 'disabled' then concat(u.name, '님이 회원님을 [', p.title, '] 플랜에 초대했습니다.')
+	when 'reply' then concat(u.name, '님이 [', r.subject, '] 게시글에 댓글을 달았습니다.') end notify_msg
+		
+	from notify n
+	join users u on n.sender_id = u.user_id
+	left join plan p on n.target_id = p.plan_id
+	left join review r on n.target_id = r.review_id
+	where n.user_id = ${userId}
+	order by notify_id desc limit 3
+	</select>
+	
+	<update id="acceptNotify" parameterType="map">
+	update notify set type = 'accepted'
+	where target_id = ${targetId}
+	</update>
+	
+	<update id="disableNotify" parameterType="map">
+	update notify set type = 'disabled'
+	where notify_id = ${notifyId}
+	</update>
+	
+	<insert id="postInviteNotify" parameterType="map">
+	insert into notify (user_id, type, `read`, sender_id, target_id)
+	values (${receiverId}, 'invite', 0, ${senderId}, ${planId})
+	</insert>
+	
+	<select id="checkNotifyReceiver" parameterType="map" resultType="int">
+	select count(*)
+	from notify
+	where user_id = ${userId} and notify_id = ${notifyId}
+	</select>
+	
+</mapper>

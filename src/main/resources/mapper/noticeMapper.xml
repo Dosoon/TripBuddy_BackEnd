@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.notice.model.mapper.NoticeMapper">
+
+	<resultMap type="noticeDto" id="notice">
+		<result column="notice_id" property="noticeId" />
+		<result column="user_id" property="userId" />
+		<result column="name" property="userName" />
+		<result column="subject" property="subject" />
+		<result column="content" property="content" />
+		<result column="regist_time" property="registerTime" />
+	</resultMap>
+
+	<insert id="postNotice" parameterType="noticeDto">
+	insert into notice
+	(subject, content, user_id)
+	values (#{subject}, #{content}, #{userId})
+	</insert>
+
+	<update id="modifyNotice" parameterType="noticeDTo">
+	update notice
+	set subject
+	= #{subject} , content = #{content}
+	where notice_id = #{noticeId}
+	</update>
+
+	<select id="getNotices" parameterType="map" resultMap="notice">
+	select
+	n.notice_id, n.subject, n.user_id,
+	n.regist_time, u.name
+	from notice n
+	inner join users u on n.user_id = u.user_id
+	<if test="keyword != null">
+	where n.subject like concat('%', #{keyword}, '%')
+	</if>
+	<if test="sort == 'new'">
+	order by n.notice_id desc
+	</if>
+	<if test="sort == 'old'">
+	order by n.notice_id asc
+	</if>
+	<if test="sort == null">
+	order by n.notice_id desc
+	</if>
+	limit 20
+	offset #{offset}
+	</select>
+
+	<select id="viewNotice" parameterType="int" resultMap="notice">
+	select n.notice_id, n.subject, n.content,
+	n.user_id, n.regist_time, u.name
+	from notice n
+	inner join users u on n.user_id = u.user_id
+	where n.notice_id = #{noticeId}
+	</select>
+	
+	<delete id="deleteNotice" parameterType="int">
+	delete from notice
+	where notice_id = #{noticeId}
+	</delete>
+	
+	<select id="checkNoticeAuthor" parameterType="map" resultType="int">
+	select count(*)
+	from notice
+	where notice_id = ${noticeId} and user_id = ${userId}
+	</select>
+	
+	<select id="totalNotices" parameterType="map" resultType="int">
+	select count(*) from notice
+	<if test="keyword != null">
+	where subject like concat('%', #{keyword}, '%')
+	</if>
+	</select>
+
+</mapper>

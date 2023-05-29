@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.memo.model.mapper.MemoMapper">
+
+	<resultMap type="memoDto" id="memo">
+		<result column="memo_id" property="memoId" />
+		<result column="user_id" property="userId" />
+		<result column="user_profileimg" property="userProfileImg" />
+		<result column="plan_id" property="planId" />
+		<result column="content_id" property="contentId" />
+		<result column="content" property="content" />
+		<result column="name" property="userName" />
+		<result column="is_mine" property="isMine" />
+	</resultMap>
+
+	<insert id="postMemo" parameterType="memoDto">
+		insert into memo 
+		(plan_id, content_id, user_id, content)
+		values(#{planId},
+		#{contentId}, #{userId}, #{content})
+	</insert>
+
+	<delete id="deleteMemo" parameterType="int">
+		delete from memo
+		where
+		memo_id = ${commentId}
+	</delete>
+
+	<select id="getMemos" parameterType="map" resultMap="memo">
+		select
+		m.memo_id, m.plan_id, m.user_id, u.name, u.profileimg user_profileimg,
+		m.content_id, m.content,
+		case when m.user_id = ${userId} then 1 else 0 end is_mine
+		from memo m inner join users u
+		on u.user_id = m.user_id
+		where m.content_id = #{contentId} and m.plan_id = #{planId}
+		order by m.memo_id desc
+	</select>
+	
+	<select id="checkMemoAuthor" parameterType="map" resultType="int">
+	select count(*)
+	from memo
+	where user_id = ${userId} and memo_id = ${memoId}
+	</select>
+</mapper>

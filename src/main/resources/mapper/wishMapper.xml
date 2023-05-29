@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripbuddy.wish.model.mapper.WishMapper">
+
+	<resultMap type="wishDto" id="wish">
+		<result column="content_id" property="contentId"/>
+		<result column="user_id" property="userId"/>
+	</resultMap>
+	
+	<resultMap type="attractionDto" id="attraction">
+	    <result column="content_id" property="contentId" />
+	    <result column="content_type_id" property="contentTypeId" />
+	    <result column="title" property="title" />
+	    <result column="addr1" property="addr1" />
+	    <result column="addr2" property="addr2" />
+	    <result column="zipcode" property="zipCode" />
+	    <result column="first_image" property="firstImage" />
+	    <result column="first_image2" property="firstImage2" />
+	    <result column="readcount" property="readCount" />
+	    <result column="sido_code" property="sidoCode" />
+	    <result column="gugun_code" property="gugunCode" />
+	    <result column="latitude" property="latitude" />
+	    <result column="longitude" property="longitude" />
+	    <result column="mlevel" property="mlevel" />
+	</resultMap>
+	
+	<insert id="postWish" parameterType="map">
+	insert into wish (user_id, content_id)
+	values (${userId}, ${contentId})
+	</insert>
+
+	<delete id="deleteWish" parameterType="map">
+	delete from wish
+	where user_id = ${userId} and content_id = ${contentId}
+	</delete>
+	
+	<select id="getWishes" parameterType="map" resultMap="attraction">
+	select
+	content_id, content_type_id, title, addr1, addr2, zipcode, first_image, first_image2,
+	readcount, sido_code, gugun_code, latitude, longitude, mlevel
+	from attraction_info
+	where content_id IN
+	(select * from (select content_id from wish where user_id = ${userId} limit 10 offset ${offset}) t)
+	</select>
+	
+	<select id="checkWish" parameterType="map" resultType="int">
+	select count(*) from wish where user_id = ${userId} and content_id = ${contentId}
+	</select>
+
+</mapper>

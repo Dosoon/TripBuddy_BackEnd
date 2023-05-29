@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.review.model.mapper.ReviewMapper">
+
+	<resultMap type="reviewDto" id="review">
+		<result column="review_id" property="reviewId"></result>
+		<result column="subject" property="subject"></result>
+		<result column="content" property="content"></result>
+		<result column="user_id" property="userId"></result>
+		<result column="user_name" property="userName"></result>
+		<result column="regist_time" property="registTime"></result>
+		<result column="plan_id" property="planId"></result>
+		<result column="rating" property="rating"></result>
+		<result column="thumbnail" property="thumbnail"></result>
+	</resultMap>
+
+	<resultMap type="commentDto" id="comment">
+		<result column="user_id" property="userId"></result>
+		<result column="review_id" property="reviewId"></result>
+		<result column="comment_id" property="commentId"></result>
+		<result column="register_time" property="registerTime"></result>
+		<result column="name" property="userName"></result>
+		<result column="content" property="content"></result>
+	</resultMap>
+
+	<resultMap type="reviewDto" id="reviewWithPlanDto"
+		extends="review">
+		<association property="planDto" column="planId = plan_id"
+			javaType="planDto" select="getPlanInfo">
+			<result column="plan_id" property="planId" />
+			<result column="title" property="title" />
+			<result column="start_date" property="startDate" />
+			<result column="end_date" property="endDate" />
+			<collection property="courses" column="planId = plan_id"
+				javaType="list" ofType="courseDto" select="getCourseInfo" />
+		</association>
+	</resultMap>
+
+	<resultMap type="planDto" id="plan">
+		<result column="plan_id" property="planId" />
+		<result column="title" property="title" />
+		<result column="start_date" property="startDate" />
+		<result column="end_date" property="endDate" />
+		<collection property="courses" column="planId = plan_id"
+			javaType="list" ofType="courseDto" select="getCourseInfo" />
+	</resultMap>
+
+	<resultMap type="courseDto" id="course">
+		<result column="content_id" property="contentId" />
+		<result column="plan_id" property="planId" />
+		<result column="order" property="order" />
+		<result column="day" property="day" />
+		<association property="attractionDto"
+			javaType="attractionDto">
+			<result column="content_id" property="contentId" />
+			<result column="content_type_id" property="contentTypeId" />
+			<result column="title" property="title" />
+			<result column="addr1" property="addr1" />
+			<result column="addr2" property="addr2" />
+			<result column="zipcode" property="zipCode" />
+			<result column="first_image" property="firstImage" />
+			<result column="first_image2" property="firstImage2" />
+			<result column="readcount" property="readCount" />
+			<result column="sido_code" property="sidoCode" />
+			<result column="gugun_code" property="gugunCode" />
+			<result column="latitude" property="latitude" />
+			<result column="longitude" property="longitude" />
+			<result column="mlevel" property="mlevel" />
+		</association>
+	</resultMap>
+
+	<resultMap type="attractionDto" id="attraction">
+		<result column="content_id" property="contentId" />
+		<result column="content_type_id" property="contentTypeId" />
+		<result column="title" property="title" />
+		<result column="addr1" property="addr1" />
+		<result column="addr2" property="addr2" />
+		<result column="zipcode" property="zipCode" />
+		<result column="first_image" property="firstImage" />
+		<result column="first_image2" property="firstImage2" />
+		<result column="readcount" property="readCount" />
+		<result column="sido_code" property="sidoCode" />
+		<result column="gugun_code" property="gugunCode" />
+		<result column="latitude" property="latitude" />
+		<result column="longitude" property="longitude" />
+		<result column="mlevel" property="mlevel" />
+	</resultMap>
+
+	<insert id="postReview" parameterType="reviewDto">
+		insert into review (subject, content, user_id, plan_id)
+		values (#{subject}, #{content}, #{userId}, #{planId})
+	</insert>
+
+	<select id="listReview" parameterType="map" resultMap="review">
+		select distinct rv.review_id, rv.subject, rv.content, rv.user_id,
+		rv.regist_time, rv.plan_id, u.name user_name,
+		IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+		from review rv
+		join users u on rv.user_id = u.user_id
+		left join rating rt on rv.review_id = rt.review_id
+		<if test="sort != null">
+			order by ${sort}
+		</if>
+		<if test="sort == null">
+			order by review_id desc
+		</if>
+		limit 9 offset ${page}
+	</select>
+
+	<select id="getReview" parameterType="int"
+		resultMap="reviewWithPlanDto">
+		select distinct rv.review_id, rv.subject, rv.content, rv.user_id,
+		rv.regist_time, rv.plan_id, u.name user_name,
+		IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+		from review rv
+		join users u on rv.user_id = u.user_id
+		left join rating rt on rv.review_id = rt.review_id
+		where rv.review_id = ${reviewId}
+	</select>
+
+	<select id="listHotReview" parameterType="map"
+		resultMap="review">
+        select ljt.review_id, ljt.subject, ljt.content, ljt.user_id,
+		ljt.regist_time, ljt.plan_id, ljt.user_name, ljt.rating,
+		 thumbnail from
+		(    select distinct rv.review_id, rv.subject, rv.content, rv.user_id,
+		rv.regist_time, rv.plan_id, u.name user_name,
+		IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+		from review rv
+		join users u on rv.user_id = u.user_id
+		left join rating rt on rv.review_id = rt.review_id
+		order by rating desc
+		limit 6) ljt
+		left join (select review_id , max(first_image) thumbnail from review r
+		join (select p.plan_id, a.first_image, c.content_id
+		from attraction_info a
+		join course c on c.content_id = a.content_id
+		join plan p on p.plan_id = c.plan_id
+		where first_image is not null and first_image !=''
+		) pfc on r.plan_id = pfc.plan_id
+		group by review_id) rjt on ljt.review_id = rjt.review_id;
+	</select>
+
+	<select id="listComment" parameterType="int" resultMap="comment">
+		select user_id, review_id, comment_id, register_time, name, content
+		from comment
+		natural join users
+		where review_id = ${reviewId}
+		order by register_time asc
+	</select>
+
+	<update id="modifyReview" parameterType="reviewDto">
+		update review set subject = #{subject}, content = #{content}, plan_id =
+		#{planId}
+		where review_id = ${reviewId}
+	</update>
+
+	<delete id="deleteReview" parameterType="int">
+		delete from review
+		where review_id = ${reviewId}
+	</delete>
+
+	<insert id="rateReview" parameterType="map">
+		insert into rating (user_id, review_id, rate)
+		values (${userId}, ${reviewId}, ${rating})
+	</insert>
+
+	<select id="getPlanInfo" resultMap="plan">
+		select plan_id, title, start_date, end_date
+		from plan
+		where plan_id = ${planId}
+	</select>
+
+	<select id="getCourseInfo" resultMap="course">
+		select c.content_id, c.plan_id, c.order, c.day,
+		a.content_id, a.content_type_id, a.title, a.addr1, a.addr2, a.first_image,
+		a.sido_code, a.gugun_code, a.latitude, a.longitude
+		from course c
+		join attraction_info a on a.content_id = c.content_id
+		where c.plan_id = ${planId}
+	</select>
+
+	<select id="getRateAvg" resultType="float" parameterType="int">
+		select avg(rate) from rating where review_id = ${reviewId}
+	</select>
+
+	<select id="getRate" resultType="int" parameterType="map">
+		select rate
+		from rating
+		where user_id = ${userId} and review_id = ${reviewId}
+	</select>
+
+
+	<select id="checkRatingHistory" resultType="int"
+		parameterType="map">
+		select count(*)
+		from rating
+		where user_id = ${userId} and review_id = ${reviewId}
+	</select>
+
+
+	<select id="checkReviewAuthor" resultType="int"
+		parameterType="map">
+		select count(*)
+		from review
+		where user_id = ${userId} and review_id = ${reviewId}
+	</select>
+
+	<select id="getReviews" parameterType="map" resultMap="review">
+		select ljt.review_id, ljt.subject, ljt.content, ljt.user_id,
+		ljt.regist_time, ljt.plan_id, ljt.user_name, ljt.rating,
+		 thumbnail from
+		(select distinct rv.review_id, rv.subject, rv.content, rv.user_id,
+		rv.regist_time, rv.plan_id, u.name user_name,
+		IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+		from review rv
+		join users u on rv.user_id = u.user_id
+		left join rating rt on rv.review_id = rt.review_id) ljt
+		left join (select review_id , max(first_image) thumbnail from review r
+		join (select p.plan_id, a.first_image, c.content_id
+		from attraction_info a
+		join course c on c.content_id = a.content_id
+		join plan p on p.plan_id = c.plan_id
+		where first_image is not null and first_image !=''
+		) pfc on r.plan_id = pfc.plan_id
+		group by review_id) rjt on ljt.review_id = rjt.review_id
+		<if test="keyword != null">
+			where ljt.subject like concat('%', #{keyword}, '%')
+		</if>
+		<if test="sort == 'new'">
+			order by ljt.review_id desc
+		</if>
+		<if test="sort == 'old'">
+			order by ljt.review_id asc
+		</if>
+		<if test="sort == 'rating'">
+			order by rating desc, ljt.review_id desc
+		</if>
+		<if test="sort == null">
+			order by ljt.review_id desc
+		</if>
+		limit 9
+		offset #{offset}
+	</select>
+
+	<select id="totalReviews" parameterType="map" resultType="int">
+		select count(*) from review
+		<if test="keyword != null">
+			where subject like concat('%', #{keyword}, '%')
+		</if>
+	</select>
+
+
+	<select id="getReviewsById" parameterType="String" resultMap="review">
+		select ljt.review_id, ljt.subject, ljt.content, ljt.user_id,
+		ljt.regist_time, ljt.plan_id, ljt.user_name, ljt.rating, ljt.id,
+		 thumbnail from
+		(select distinct rv.review_id, rv.subject, rv.content, rv.user_id,
+		rv.regist_time, rv.plan_id, u.name user_name , u.id,
+		IFNULL((select avg(rate) from rating where review_id = rv.review_id), 0) rating
+		from review rv
+		join users u on rv.user_id = u.user_id
+		left join rating rt on rv.review_id = rt.review_id) ljt
+		left join (select review_id , max(first_image) thumbnail from review r
+		join (select p.plan_id, a.first_image, c.content_id
+		from attraction_info a
+		join course c on c.content_id = a.content_id
+		join plan p on p.plan_id = c.plan_id
+		where first_image is not null and first_image !=''
+		) pfc on r.plan_id = pfc.plan_id
+		group by review_id) rjt on ljt.review_id = rjt.review_id
+		where id = #{id}
+		order by ljt.review_id desc;
+	</select>
+
+
+
+
+</mapper>

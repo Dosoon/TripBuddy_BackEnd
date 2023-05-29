@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.follow.model.mapper.FollowMapper">
+
+
+	<resultMap type="followDto" id="follow">
+		<result column="follower" property="followerId" />
+		<result column="follower_name" property="followerName" />
+		<result column="followee" property="followeeId" />
+		<result column="followee_name" property="followeeName" />
+		<result column="followee_profileImg"
+			property="followeeProfileImg" />
+		<result column="follower_profileImg"
+			property="followerProfileImg" />
+		<result column="follow_back" property="followBack" />
+	</resultMap>
+
+	<insert id="followUser" parameterType="map">
+		insert into follow
+		(follower, followee)
+		values (${followerId}, ${followeeId})
+	</insert>
+
+	<delete id="unfollowUser" parameterType="map">
+		delete from follow
+		where
+		follower = ${followerId} and followee = ${followeeId}
+	</delete>
+
+	<select id="listFollowing" parameterType="int"
+		resultMap="follow">
+		select o.follower, (select name from users where user_id =
+		o.follower)
+		follower_name, o.followee, (select name from users where
+		user_id =
+		followee) followee_name,
+		(select count(*) from follow f where
+		o.follower = f.followee and o.followee =
+		f.follower) follow_back,
+		(select profileImg from users where user_id =
+		followee)
+		followee_profileImg
+		from follow o
+		where o.follower = ${followerId}
+	</select>
+
+	<select id="listFollower" parameterType="int" resultMap="follow">s
+		select
+		o.follower, (select name from users where user_id = o.follower)
+		follower_name, o.followee, (select name from users where user_id =
+		followee) followee_name,
+		(select count(*) from follow f where
+		o.follower = f.followee and o.followee =
+		f.follower) follow_back
+		from
+		follow o
+		where o.followee = ${followeeId}
+	</select>
+
+	<select id="followInfo" parameterType="int" resultType="map">
+		select
+		count(*) follower, (select count(*) from follow where follower =
+		${userId}) following from follow where followee = ${userId}
+	</select>
+
+
+
+	<select id="isFollowing" resultType="int" parameterType="map">
+		select
+		count(*)
+		from follow
+		where follower = ${followerId} and followee =
+		${followeeId}
+	</select>
+
+
+
+	<select id="isReviewFollowing" resultType="int"
+		parameterType="map">
+		SELECT count(*)
+		FROM follow
+		WHERE followee = (select
+		a.user_id
+		from review as a
+		where a.review_id = ${reviewId}) and
+		follower =${userId}
+
+	</select>
+
+
+</mapper>

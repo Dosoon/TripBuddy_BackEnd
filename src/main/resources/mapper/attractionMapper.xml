@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper
+	namespace="com.tripbuddy.attraction.model.mapper.AttractionMapper">
+
+	<resultMap type="areaDto" id="area">
+		<result column="sido_code" property="areaCode" />
+		<result column="sido_name" property="areaName" />
+		<result column="gugun_code" property="areaCode" />
+		<result column="gugun_name" property="areaName" />
+	</resultMap>
+
+
+	<resultMap type="attractionDto" id="attraction">
+		<result column="content_id" property="contentId" />
+		<result column="content_type_id" property="contentTypeId" />
+		<result column="title" property="title" />
+		<result column="addr1" property="addr1" />
+		<result column="addr2" property="addr2" />
+		<result column="zipcode" property="zipCode" />
+		<result column="first_image" property="firstImage" />
+		<result column="first_image2" property="firstImage2" />
+		<result column="readcount" property="readCount" />
+		<result column="sido_code" property="sidoCode" />
+		<result column="gugun_code" property="gugunCode" />
+		<result column="latitude" property="latitude" />
+		<result column="longitude" property="longitude" />
+		<result column="mlevel" property="mlevel" />
+	</resultMap>
+
+
+
+	<select id="getSidoAreaCodes" resultMap="area">
+		select sido_code, sido_name
+		from sido
+	</select>
+
+
+	<select id="getGugunAreaCodes" parameterType="int"
+		resultMap="area">
+		select gugun_code, gugun_name
+		from gugun
+		where sido_code = #{sido}
+	</select>
+
+
+
+	<select id="search" parameterType="map" resultMap="attraction">
+		select content_id, content_type_id, title, addr1, addr2, first_image,
+		sido_code, gugun_code, latitude, longitude from attraction_info
+		<trim prefix="WHERE" prefixOverrides="AND | OR">
+			<if test="keyword == null">
+				<if test="swLat == null">
+					<if test="sido != null and gugun == null">
+						AND sido_code = #{sido}
+					</if>
+					<if test="sido != null and gugun != null">
+						AND sido_code = #{sido}
+						AND gugun_code = #{gugun}
+					</if>
+				</if>
+				<if test="swLat  != null">
+					AND latitude between ${swLat} and ${neLat} and
+					longitude between
+					${swLng} and ${neLng}
+				</if>
+			</if>
+			<if test="keyword != null">
+				AND title like concat('%', #{keyword}, '%')
+				<if test="sido != null and gugun == null ">
+					AND sido_code = #{sido}
+				</if>
+				<if test="sido != null and gugun != null ">
+					AND sido_code = #{sido}
+					AND gugun_code = #{gugun}
+				</if>
+			</if>
+			<if test="type != null">
+			 AND content_type_id = #{type}
+			</if>
+		</trim>
+		limit 10 offset #{offset}
+	</select>
+	
+	
+	
+	<select id="attractionInfo" parameterType="int" resultMap = "attraction" >
+		select content_id, content_type_id, title, addr1, addr2, first_image, sido_code, gugun_code, latitude, longitude
+		from attraction_info
+		where content_id = #{contentId}
+	</select> 
+
+
+
+
+
+</mapper>
