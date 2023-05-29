@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -103,10 +104,11 @@ public class WebMvcConfiguration implements WebMvcConfigurer, WebSocketConfigure
 				.addResourceLocations("classpath:/META-INF/resources/webjars/springfox-swagger-ui/");
 	}
 	
+	@Value("${frontend.origin}") String FEOrigin;
+	
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
-//		registry.addMapping("/**").allowedOrigins("http://localhost:8080", "http://70.12.103.81:8080")
-		registry.addMapping("/**").allowedOrigins("http://localhost:8080", "http://172.30.1.44:8080")
+		registry.addMapping("/**").allowedOrigins("http://localhost:8080", FEOrigin)
 		.allowedMethods("GET", "POST", "PUT", "DELETE")
 		.allowedHeaders("*")
 		.allowCredentials(true);
@@ -114,7 +116,6 @@ public class WebMvcConfiguration implements WebMvcConfigurer, WebSocketConfigure
 
 	@Override
 	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-//		registry.addHandler(socketHandler, "/chat").setAllowedOrigins("http://70.12.103.81:8080");
-		registry.addHandler(socketHandler, "/chat").setAllowedOrigins("http://172.30.1.44:8080");
+		registry.addHandler(socketHandler, "/chat").setAllowedOrigins(FEOrigin);
 	}
 }
